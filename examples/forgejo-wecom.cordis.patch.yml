@@ -1,0 +1,23 @@
+# Merge with this new profile's model-provider configuration. Replace every /absolute path.
+- id: webserver
+  config:
+    host: 127.0.0.1
+    port: 3083
+- id: dsh-superagent
+  config:
+    stateDir: /absolute/state/superagent-dev
+- id: session-persistence-jsonl
+  config:
+    root: /absolute/sessions/superagent-dev
+- id: storage-json
+  config:
+    root: /absolute/storage/superagent-dev
+- id: dsh-superagent-github
+  disabled: true
+- id: dsh-superagent-forgejo
+  disabled: false
+- id: dsh-superagent-wecom
+  disabled: false
+- id: subagent-codex
+  config:
+    permissionMode: approve-for-me

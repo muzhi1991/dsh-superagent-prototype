@@ -6,6 +6,12 @@
       name: dsh-superagent
     - id: dsh-superagent-github
       name: dsh-superagent/github-watch
+    - id: dsh-superagent-forgejo
+      name: dsh-superagent/forgejo-watch
+      disabled: true
+    - id: dsh-superagent-wecom
+      name: dsh-superagent/wecom-watch
+      disabled: true
     # Optional Feishu Source; requires configuring a bot CLI after enabling.
     - id: dsh-superagent-feishu
       name: dsh-superagent/feishu-watch

@@ -58,6 +58,10 @@ export async function readRepositoryPath(commands: Commands, path: string, kind:
 
 /** Reads check runs and commit statuses for a commit without emitting a trigger. */
 export async function pullChecks(commands: Commands, head: string, tally?: Tally): Promise<CiSnapshot> {
+  if (commands.deployment.forgejo) {
+    const status = await commands.api(z.object({ statuses: z.array(StatusSchema).nullish().transform(value => value ?? []) }), `commits/${head}/status`)
+    return { head, checks: [], statuses: status.statuses.sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b))) }
+  }
   const page = z.looseObject({ check_runs: z.array(z.unknown()) })
   const pages = await commands.api(z.array(page), `commits/${head}/check-runs?per_page=100`, '--paginate', '--slurp')
   const runs = validItems(CheckSchema, pages.flatMap(page => page.check_runs), tally)
@@ -83,7 +87,10 @@ const DescriptionSchema = IssueSchema.extend({
   head: z.looseObject({ ref: z.string() }).nullish(), base: z.looseObject({ ref: z.string() }).nullish(),
 })
 async function reviewThread(commands: Commands, number: number, comment: number, tally?: Tally): Promise<GithubComment[]> {
-  const comments = await commands.pages(CommentSchema, `pulls/${number}/comments?per_page=100`, tally)
+  const comments = commands.deployment.forgejo
+    ? (await Promise.all((await commands.pages(CommentSchema, `pulls/${number}/reviews`, tally)).map(review =>
+      commands.pages(CommentSchema, `pulls/${number}/reviews/${review.id}/comments`, tally)))).flat()
+    : await commands.pages(CommentSchema, `pulls/${number}/comments?per_page=100`, tally)
   const root = comments.find(item => item.id === comment)?.in_reply_to_id ?? comment
   return comments.filter(item => item.id === root || item.in_reply_to_id === root)
     .sort((a, b) => (a.created_at ?? '').localeCompare(b.created_at ?? ''))
@@ -130,7 +137,7 @@ export async function readGithub(commands: Commands, resource: string): Promise<
     return { number: item.number, title: item.title, state: item.state, ...item.merged ? { merged: true } : {},
       ...item.draft ? { draft: true } : {}, ...branches, ...labels, ...githubMessage(item, item.body ?? '', String(item.number)) }
   }
-  const listed = await commands.api(z.array(z.unknown()), `${path}/${section}?per_page=20&page=${page}`)
+  const listed = await commands.api(z.array(z.unknown()), `${commands.deployment.forgejo && section === 'comments' ? `issues/${number}` : path}/${section}?per_page=20&page=${page}`)
   const tally = { skipped: 0 }
   const items = validItems(CommentSchema, listed, tally)
   const messages = items.map(item => section === 'reviews'

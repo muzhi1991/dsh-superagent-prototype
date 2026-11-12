@@ -1,4 +1,5 @@
 /** Subprocess wrapper for running gh, lark-cli, and git commands under the deployment's configured accounts. */
+import { forgejoRequest } from '../sources/forgejo-api.ts'
 import { execFile } from 'node:child_process'
 import { basename } from 'node:path'
 import { promisify } from 'node:util'
@@ -82,12 +83,21 @@ export class Commands {
   async api<T>(schema: z.ZodType<T>, path: string, ...flags: string[]): Promise<T>
   async api(path: string, ...flags: string[]): Promise<string>
   async api<T>(schema: z.ZodType<T> | string, ...rest: string[]): Promise<T | string> {
+    if (this.deployment.forgejo) {
+      const path = typeof schema === 'string' ? schema : rest.shift() ?? ''
+      const value = await forgejoRequest(this.deployment, path, rest, this.signal)
+      return typeof schema === 'string' ? (typeof value === 'string' ? value : JSON.stringify(value)) : schema.parse(value)
+    }
     if (typeof schema === 'string') return this.run(this.deployment.github.cli, ['api', this.path(schema), ...rest])
     const [path = '', ...flags] = rest
     return schema.parse(await this.gh(['api', this.path(path), ...flags]))
   }
   /** Fetches all pages of a GitHub API list within the configured repository, skipping items that fail schema validation. */
   async pages<T>(item: z.ZodType<T>, path: string, tally?: Tally): Promise<T[]> {
+    if (this.deployment.forgejo) {
+      const pages = await forgejoRequest(this.deployment, path, ['--paginate', '--slurp'], this.signal)
+      return validItems(item, z.array(z.array(z.unknown())).parse(pages).flat(), tally)
+    }
     const pages = z.array(z.array(z.unknown())).parse(await this.gh(['api', this.path(path), '--paginate', '--slurp']))
     return validItems(item, pages.flat(), tally)
   }

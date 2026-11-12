@@ -17,7 +17,9 @@
     "./github-watch": "./lib/github-watch.js",
     "./feishu-watch": "./lib/feishu-watch.js",
     "./package.json": "./package.json",
-    "./locale/*.json": "./locale/*.json"
+    "./locale/*.json": "./locale/*.json",
+    "./forgejo-watch": "./lib/forgejo-watch.js",
+    "./wecom-watch": "./lib/wecom-watch.js"
   },
   "files": [
     "lib",
@@ -25,7 +27,8 @@
     "locale/*.json",
     "README.md",
     "prompts",
-    "skills"
+    "skills",
+    "scripts/forgejo-credential.mjs"
   ],
   "dsh": {
     "bundle": {
@@ -56,6 +59,7 @@
   },
   "packageManager": "pnpm@11.7.0",
   "dependencies": {
+    "@wecom/aibot-node-sdk": "1.0.7",
     "proper-lockfile": "4.1.2",
     "zod": "4.4.3"
   },

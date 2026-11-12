@@ -1,4 +1,5 @@
 /** Application composition root and lifecycle manager for dsh-superagent. */
+import { pullEndNotices as forgejoEndNotices } from '../sources/forgejo-pull.ts'
 import { Service, type Context } from '@deepseek-ai/cordis'
 import type { Agent } from '@deepseek-ai/dsh-agent'
 import type { SessionId } from '@deepseek-ai/dsh-session'
@@ -148,7 +149,7 @@ export class Runtime extends Service implements SourceHost {
           const ended = event.type === 'ticket.ended' ? store.tickets.get(event.data.ticketId) : undefined
           if (ended && setup.configured()) {
             const request = store.triggers.get(ended.origin.triggerId)?.text ?? ''
-            for (const message of pullEndNotices(ended, request, setup.deployment.repository)) outbox.send(message)
+            for (const message of (setup.deployment.forgejo ? forgejoEndNotices(ended, request, setup.deployment.repository, setup.deployment.forgejo.url) : pullEndNotices(ended, request, setup.deployment.repository))) outbox.send(message)
           }
         } })
       // Update the `evals` health entry on every pass if an evaluation failed as unavailable within the last hour.

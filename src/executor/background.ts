@@ -16,7 +16,7 @@ interface Jobs {
 /** What the Executor uses of DSH's subagents: joining a worker's subagents that work, its subagents, and releasing them. */
 interface Subagents {
   waitForChildren(parent: Agent): Promise<boolean>
-  listChildren(parentSessionId: string): Promise<readonly { id: string }[]>
+  listChildren(parentSessionId: string): Promise<readonly { id: string; mode?: string }[]>
   drainChildren(parent: Agent, childIds: readonly string[]): Promise<void>
 }
 /** How long a stop waits for a killed job to end, collecting its end so the worker is not woken to hear of it. */
@@ -141,8 +141,8 @@ export async function collectJob(ctx: Context, sessionId: string, job: { id: str
 export async function stopSubagents(ctx: Context, agent: Agent, keepInbox = false): Promise<void> {
   const subagents = subagentsOf(ctx)
   if (!subagents) return
-  // The catalog lists every subagent the Session had; one that ended has no agent.
-  const live = (await subagents.listChildren(agent.id)).map(child => child.id).filter(id => ctx.agents.get(id as SessionId))
+  // External children deliberately have no local Agent; drain them through the runtime too.
+  const live = (await subagents.listChildren(agent.id)).filter(child => child.mode === 'external' || ctx.agents.get(child.id as SessionId)).map(child => child.id)
   if (!live.length) return
   try { await until(subagents.drainChildren(agent, live), undefined, DRAIN_LIMIT_MS) }
   finally {

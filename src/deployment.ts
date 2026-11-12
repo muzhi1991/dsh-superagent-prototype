@@ -48,10 +48,11 @@ export const GithubAccountsSchema = z.object({
 })
 export const FeishuBotSchema = z.object({ cli: z.string().trim().default('') })
 /** Source configuration keys that affect deployment setup and trigger a restart when changed. */
-export const SETUP_FIELDS: Readonly<Record<string, readonly string[]>> = { github: Object.keys(GithubAccountsSchema.shape), feishu: Object.keys(FeishuBotSchema.shape) }
+export const SETUP_FIELDS: Readonly<Record<string, readonly string[]>> = { github: Object.keys(GithubAccountsSchema.shape), feishu: Object.keys(FeishuBotSchema.shape), forgejo: ['repository', 'credentialsFile', 'cli'] }
 
 export interface Deployment extends Machine {
   repository: string
+  forgejo?: { url: string; credentialsFile: string; login: string; cli?: string }
   github: { cli: string; login: string; noreply: string }
   feishu?: FeishuBot
 }

@@ -51,6 +51,7 @@ export const RESOURCES: readonly { name: string; holds: string; executor?: true 
   { name: 'models', holds: 'model providers, the DSH default and each role\'s model' },
   { name: 'models/<provider>', holds: 'one provider\'s models' },
   { name: 'feishu/<trigger-id>/…', holds: 'a Feishu original, as the dsh-superagent-feishu skill describes', executor: true },
+  { name: 'forgejo/…', holds: 'Forgejo Issue, PR, comments, reviews or commit status', executor: true },
   { name: 'github/…', holds: 'a GitHub original, as the dsh-superagent-github skill describes', executor: true },
 ]
 export const resourceGrammar = (executor: boolean): string => RESOURCES.filter(resource => !executor || resource.executor)
@@ -206,6 +207,13 @@ const ROUTES: readonly Route[] = [
     const commands = read.host.commands.withSignal(read.signal)
     return sourcePage(read, 'feishu', () => feishuRead(commands, ref, read.resource, read.host.feishuPageSize()))
   }],
+  ['forgejo/', read => sourcePage(read, 'forgejo', async () => {
+    const result = await readGithub(read.host.commands.withSignal(read.signal), read.resource.replace(/^forgejo\//, 'github/'))
+    if (result && typeof result === 'object' && 'next_resource' in result && typeof result.next_resource === 'string') {
+      return { ...result, next_resource: result.next_resource.replace(/^github\//, 'forgejo/') }
+    }
+    return result
+  })],
   ['github/', read => sourcePage(read, 'github', () => readGithub(read.host.commands.withSignal(read.signal), read.resource))],
   ['trigger/', async read => {
     const { host, rest, ticketId, offset, signal } = read

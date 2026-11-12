@@ -577,6 +577,15 @@ describe('a worker whose work runs in the background', () => {
     expect(h.jobs.service.kill).toHaveBeenCalledWith(job, one.sessionId, expect.any(String))
     expect(h.subagents.live(child)).toBe(false)
   })
+  it('drains external coding children without local Agent instances', async () => {
+    const one = await h.acceptedTicket(feishu('1', '@bot 修一'))
+    const child = h.subagents.spawn(one.sessionId)
+    h.agents.delete(child)
+    h.subagents.service.listChildren.mockResolvedValue([{ id: child, mode: 'external' }] as never)
+    await h.stop()
+    expect(h.subagents.service.drainChildren).toHaveBeenCalledWith(expect.anything(), [child])
+    expect(h.subagents.live(child)).toBe(false)
+  })
   it('cancels no worker for a subagent that ended before, and cancels the turn a release woke also when the release fails', async () => {
     const one = await h.acceptedTicket(feishu('1', '@bot 修一'))
     const agent = h.agents.get(one.sessionId)!
