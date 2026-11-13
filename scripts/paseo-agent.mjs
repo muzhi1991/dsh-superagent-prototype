@@ -88,7 +88,7 @@ export async function command(args) {
       if (!options['prompt-file'] || !options.request) throw new Error('send needs --prompt-file and a unique --request (use the source input/job ID)')
       binding.requests ??= {}
       if (binding.requests[options.request]) return { binding, duplicate: true, receipt: binding.requests[options.request] }
-      if (thinking) await cli(['agent', 'update', binding.agentId, '--thinking', thinking])
+      if (options.thinking) await cli(['agent', 'update', binding.agentId, '--thinking', options.thinking])
       binding.requests[options.request] = 'dispatching; inspect history before any retry'
       await save(file, binding)
       const result = await cli(['send', binding.agentId, '--prompt-file', resolve(options['prompt-file']), '--behavior', 'steer', '--no-wait'])

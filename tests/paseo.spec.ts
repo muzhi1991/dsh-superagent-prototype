@@ -50,7 +50,7 @@ describe('Paseo CLI binding', () => {
     expect(calls.find(c => c.args[0] === 'run').args).toEqual(expect.arrayContaining(['--thinking', 'medium', '--mode', 'full-access']))
     expect(calls.filter(c => c.args[0] === 'agent')).toEqual([expect.objectContaining({ args: ['agent', 'update', 'child', '--thinking', 'high'] })])
     await f.run('send', '--request', 'input-2', '--prompt-file', f.prompt)
-    expect((await f.calls()).filter(c => c.args[0] === 'agent').at(-1).args).toEqual(['agent', 'update', 'child', '--thinking', 'medium'])
+    expect((await f.calls()).filter(c => c.args[0] === 'agent')).toHaveLength(1) // Ordinary follow-ups retain the current effort.
     expect(calls.some(c => c.args[0] === 'workspace' && c.args[1] === 'create')).toBe(false)
     expect(calls.every(c => c.parent === undefined)).toBe(true)
     expect(calls.find(c => c.args[0] === 'run').args).toContain('GIT_AUTHOR_NAME=bot')
