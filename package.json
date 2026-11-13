@@ -29,7 +29,8 @@
     "prompts",
     "skills",
     "scripts/forgejo-credential.mjs",
-    "scripts/paseo-agent.mjs"
+    "scripts/paseo-agent.mjs",
+    "docs/paseo-delegation.md"
   ],
   "dsh": {
     "bundle": {
