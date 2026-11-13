@@ -32,6 +32,7 @@ export async function command(args) {
     throw new Error('Paseo is not configured for this deployment')
   }
   if (!config.cli || !config.home || !config.projectId || !config.workRoot || !config.provider || !config.mode) throw new Error('Incomplete paseo.json')
+  const thinking = options.thinking ?? config.thinking
   const directory = join(state, 'paseo-bindings')
   await mkdir(directory, { recursive: true, mode: 0o700 })
   const file = join(directory, `${options.ticket}.json`)
@@ -87,6 +88,7 @@ export async function command(args) {
       if (!options['prompt-file'] || !options.request) throw new Error('send needs --prompt-file and a unique --request (use the source input/job ID)')
       binding.requests ??= {}
       if (binding.requests[options.request]) return { binding, duplicate: true, receipt: binding.requests[options.request] }
+      if (thinking) await cli(['agent', 'update', binding.agentId, '--thinking', thinking])
       binding.requests[options.request] = 'dispatching; inspect history before any retry'
       await save(file, binding)
       const result = await cli(['send', binding.agentId, '--prompt-file', resolve(options['prompt-file']), '--behavior', 'steer', '--no-wait'])
@@ -143,7 +145,7 @@ export async function command(args) {
     const prefix = `You are the delegated agent for Ticket ${options.ticket}, in ${cwd}, branch ${branch || '(detached; research only)'}. Do the assigned research, planning, debugging, review, environment setup or implementation. For code changes, test locally and make small local commits with the configured Git identity; leave push, Issue/PR management, remote CI dispatch and external messaging to the DSH Worker. Provide conclusions, commit IDs, checks/evidence and required remote CI parameters. Follow repository AGENTS.md. Work only within this assignment; do not create additional agents unless explicitly delegated.\n\n`
     const argv = ['run', '--workspace', binding.workspaceId, '--provider', config.provider, '--mode', config.mode, '--title', title, '--label', `superagent-binding=${binding.label}`, '--no-wait']
     if (config.model) argv.push('--model', config.model)
-    if (config.thinking) argv.push('--thinking', config.thinking)
+    if (thinking) argv.push('--thinking', thinking)
     for (const [key, value] of Object.entries(identity)) argv.push('--env', `${key}=${value}`)
     binding.launchAttempted = new Date().toISOString()
     await save(file, binding)
