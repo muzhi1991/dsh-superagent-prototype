@@ -17,6 +17,7 @@ import type { Sessions } from '../app/sessions.ts'
 import { WorktreeNameSchema } from '../app/assessment.ts'
 import { resultRelay } from '../app/notices.ts'
 import type { HealthEntry } from '../infra/health.ts'
+import { stopPaseoAgent } from './paseo.ts'
 import { cancelled, collectJob, killJobs, runningJobs, stopBackground, stopSubagents, until, untilQuiet } from './background.ts'
 
 const now = (): string => new Date().toISOString()
@@ -370,7 +371,8 @@ export class DshExecutor implements Executor {
   }
   /** Stop what a ticket's worker runs in the background (see `stopBackground`). */
   private stopWork(ticketId: string, reason: string, keepInbox = false): void {
-    this.track(ticketId, stopBackground(this.host.context, workerSessionId(ticketId), reason, keepInbox))
+    this.track(ticketId, Promise.all([stopBackground(this.host.context, workerSessionId(ticketId), reason, keepInbox),
+      stopPaseoAgent(this.host.machine.stateDir, ticketId)]).then(() => {}))
   }
   /** A stop of a ticket's background work, which a launch or a delivery of the ticket waits for while it runs. */
   private track(ticketId: string, stop: Promise<void>): void {
@@ -392,11 +394,16 @@ export class DshExecutor implements Executor {
     const agents = this.host.store.tickets.list().map(ticket => this.host.context.agents.get(workerSessionId(ticket.id) as SessionId))
       .filter((agent): agent is Agent => agent !== undefined)
     const stop = async () => {
-      await Promise.allSettled(agents.map(agent => stopBackground(this.host.context, agent.id, 'dsh-superagent stopped', true)))
+      const stops = await Promise.allSettled([
+        ...agents.map(agent => stopBackground(this.host.context, agent.id, 'dsh-superagent stopped', true)),
+        ...this.host.store.tickets.list().map(ticket => stopPaseoAgent(this.host.machine.stateDir, ticket.id)),
+      ])
       for (const { collect } of this.left.values()) collect.abort()
       const running = agents.filter(agent => agent.status !== 'idle')
       for (const agent of running) agent.cancel({ kind: 'user' }, { keepInbox: true })
       await Promise.allSettled(running.map(agent => agent.whenIdle()))
+      const failed = stops.find(result => result.status === 'rejected')
+      if (failed?.status === 'rejected') throw failed.reason
     }
     await until(stop(), undefined, SHUTDOWN_STOP_MS)
   }

@@ -1,6 +1,6 @@
 # Forgejo, WeCom and Codex
 
-This fork adds optional Sources to the original Router → Ticket → DSH Worker design. The Worker can delegate implementation to the official `@deepseek-ai/dsh-subagent-codex` provider and remains responsible for verification, Git identity, PR ownership and reporting. The domain engine and authorization model are unchanged.
+This fork adds optional Sources to the original Router → Ticket → DSH Worker design. The Worker can delegate to a persistent Paseo Agent through the Paseo CLI bridge (`docs/paseo-delegation.md`), retaining verification, remote publication and reporting. The official one-shot Codex provider below remains an alternative for deployments that do not need continuation. The domain engine and authorization model are unchanged.
 
 ## Install into an independent profile
 
@@ -55,7 +55,7 @@ git -C /absolute/base-clone fetch origin && git -C /absolute/base-clone worktree
 
 This runs once per new Ticket directory. Continuations reuse that directory. Existing-PR tasks must inspect and check out the PR's head before editing; this default prepare command starts from the default branch. The plugin does not automatically delete worktrees or merge PRs. Retain worktrees while a Ticket may resume; prune them deliberately after reviewing local changes.
 
-Add to the deployment delivery prompt: use `tea` for Forgejo; use `subagent_codex` with the current Ticket directory for implementation; wait for its completion, inspect the diff and run tests; Worker commits/pushes and creates or updates the PR; report permission failures truthfully. Set the bot's commit identity explicitly. Keep automatic merging disabled unless separately authorized.
+For the optional one-shot provider (not the Paseo deployment), add to the delivery prompt: use `tea` for Forgejo; use `subagent_codex` with the current Ticket directory for implementation; wait for its completion, inspect the diff and run tests; Worker commits/pushes and creates or updates the PR; report permission failures truthfully. Set the bot's commit identity explicitly. Keep automatic merging disabled unless separately authorized.
 
 ## Message and lifecycle behavior
 

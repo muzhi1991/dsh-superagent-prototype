@@ -28,7 +28,8 @@
     "README.md",
     "prompts",
     "skills",
-    "scripts/forgejo-credential.mjs"
+    "scripts/forgejo-credential.mjs",
+    "scripts/paseo-agent.mjs"
   ],
   "dsh": {
     "bundle": {
